@@ -1,0 +1,9 @@
+data/raw/
+data/selected/
+dbt-env/
+target/
+dbt_packages/
+logs/
+__pycache__/
+*.pyc
+.user.yml

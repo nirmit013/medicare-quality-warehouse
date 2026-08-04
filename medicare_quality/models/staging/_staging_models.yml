@@ -1,0 +1,83 @@
+version: 2
+
+models:
+  - name: stg_provider
+    description: >
+      One row per provider per vintage, with column renames across
+      snapshots resolved. Feeds the provider dimension.
+    columns:
+      - name: provider_ccn
+        description: Six-character CMS Certification Number, zero-padded.
+        data_tests:
+          - not_null
+      - name: overall_star_rating
+        description: CMS overall quality star rating, 1-5. NULL when not rated.
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 5
+              where: "overall_star_rating is not null"
+      - name: vintage
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['2023-01-06', '2024-01-31', '2025-02-19', '2026-02-25']
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - provider_ccn
+            - vintage
+
+  - name: stg_complications_deaths
+    description: Mortality and complication measures, one row per provider-measure-vintage.
+    columns:
+      - name: provider_ccn
+        data_tests: [not_null]
+      - name: measure_id
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [provider_ccn, measure_id, vintage]
+
+  - name: stg_unplanned_visits
+    description: Readmission and unplanned return measures.
+    columns:
+      - name: provider_ccn
+        data_tests: [not_null]
+      - name: measure_id
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [provider_ccn, measure_id, vintage]
+
+  - name: stg_infections
+    description: Healthcare-associated infection standardized ratios.
+    columns:
+      - name: provider_ccn
+        data_tests: [not_null]
+      - name: measure_id
+        data_tests: [not_null]
+
+  - name: stg_spending_per_patient
+    description: Medicare Spending Per Beneficiary ratio.
+    columns:
+      - name: provider_ccn
+        data_tests: [not_null]
+
+  - name: stg_hcahps
+    description: Patient experience survey results.
+    columns:
+      - name: provider_ccn
+        data_tests: [not_null]
+
+  - name: stg_footnotes
+    description: >
+      Footnote code lookup, keyed by code and vintage. Three definitions
+      were revised between snapshots; code 22 changed scope rather than
+      wording, so the vintage is part of the key.
+    columns:
+      - name: footnote_code
+        data_tests: [not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [footnote_code, vintage]
