@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: int_quality_measures
+    description: >
+      All non-HCAHPS quality measures unioned into a single fact table.
+      One row per provider per measure per vintage.
+    columns:
+      - name: quality_measure_key
+        description: Surrogate key over provider, measure, and vintage.
+        data_tests:
+          - unique
+          - not_null
+      - name: provider_ccn
+        data_tests: [not_null]
+      - name: measure_domain
+        data_tests:
+          - accepted_values:
+              values:
+                - 'Complications & Deaths'
+                - 'Unplanned Visits'
+                - 'Healthcare-Associated Infections'
+                - 'Spending'
+
+  - name: int_provider_costs
+    description: >
+      Inpatient charges aggregated to provider-year using
+      discharge-weighted averages.
+    columns:
+      - name: provider_ccn
+        data_tests: [not_null]
+      - name: payment_to_charge_ratio
+        description: >
+          Medicare payment as a share of billed charges. Typically well
+          below 1.0. Thirty-nine provider-years exceed it, concentrated
+          in public safety-net and Indian Health Service facilities -
+          Provident Hospital of Chicago, John H Stroger Jr, Harris
+          Health, Claremore Indian Hospital. These institutions carry
+          low chargemaster rates while receiving supplemental payments,
+          so a ratio above 1.0 is expected rather than erroneous. The
+          test warns so the count stays visible without failing builds.
+        data_tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1
+              where: "payment_to_charge_ratio is not null"
+              config:
+                severity: warn

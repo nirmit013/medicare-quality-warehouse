@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: dim_provider
+    description: Provider dimension at the latest vintage.
+    columns:
+      - name: provider_ccn
+        data_tests: [unique, not_null]
+      - name: quality_tier
+        data_tests:
+          - accepted_values:
+              values: ['High', 'Average', 'Low', 'Not Rated']
+
+  - name: fct_quality
+    description: Quality measures with footnote text resolved.
+    columns:
+      - name: quality_measure_key
+        data_tests: [unique, not_null]
+      - name: provider_ccn
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_provider')
+              field: provider_ccn
+              config:
+                severity: warn
+
+  - name: mart_cost_vs_quality
+    description: >
+      Provider-level join of inpatient charges to quality outcomes.
+      The analytical output of the warehouse.
+    columns:
+      - name: provider_ccn
+        data_tests: [unique, not_null]
+      - name: charge_quartile
+        data_tests:
+          - accepted_values:
+              values: [1, 2, 3, 4]
+              quote: false

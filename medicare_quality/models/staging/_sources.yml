@@ -47,3 +47,13 @@ sources:
         description: >
           Decodes the numeric footnote codes that explain why a measure
           was suppressed or is otherwise unavailable.
+
+      - name: inpatient_charges
+        description: >
+          Medicare Inpatient Hospitals by Provider and Service, release
+          years 2022-2024. One row per provider per MS-DRG per year, with
+          charges pre-aggregated by CMS across each hospital's discharges.
+          Carried over from the Power BI cost analysis project.
+        columns:
+          - name: rndrng_prvdr_ccn
+            description: CMS Certification Number, joins to Care Compare on the same key.	
