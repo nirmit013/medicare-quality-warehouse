@@ -6,9 +6,10 @@
     The analytical question: do hospitals that charge more deliver
     better outcomes?
 
-    Joins discharge-weighted inpatient charges to CMS quality ratings
-    and readmission rates at provider level. Uses 2024 charges against
-    the most recent quality vintage.
+    Joins discharge-weighted inpatient charges to CMS quality ratings,
+    readmission and mortality rates, Medicare spending efficiency, and
+    patient experience at provider level. Uses the latest available
+    charge year against the most recent quality vintage.
 
     Only 2,883 of 2,906 inpatient providers appear in Care Compare, and
     Care Compare covers roughly 5,400 facilities overall - the surplus
@@ -72,6 +73,34 @@ spending as (
 
 ),
 
+/*
+    Patient experience is pivoted from HCAHPS rather than averaged.
+    The measures are not comparable to each other - some are star
+    ratings, some are percentages - so each is extracted by measure_id
+    into its own column.
+*/
+patient_experience as (
+
+    select
+        provider_ccn,
+
+        max(case when measure_id = 'H_STAR_RATING'
+                 then star_rating end)                as patient_experience_stars,
+
+        max(case when measure_id = 'H_HSP_RATING_STAR_RATING'
+                 then star_rating end)                as overall_hospital_rating_stars,
+
+        max(case when measure_id = 'H_RECMND_DY'
+                 then answer_percent end)             as pct_would_recommend,
+
+        max(completed_surveys)                        as survey_responses
+
+    from {{ ref('stg_hcahps') }}
+    where vintage = (select max(vintage) from {{ ref('stg_hcahps') }})
+    group by provider_ccn
+
+),
+
 final as (
 
     select
@@ -92,14 +121,19 @@ final as (
         c.unweighted_avg_charge,
 
         round(c.unweighted_avg_charge - c.weighted_avg_charge, 2)
-                                                 as weighting_gap,
+                                                      as weighting_gap,
 
         r.avg_readmission_rate,
         m.avg_mortality_rate,
         s.medicare_spending_ratio,
 
+        pe.patient_experience_stars,
+        pe.overall_hospital_rating_stars,
+        pe.pct_would_recommend,
+        pe.survey_responses,
+
         ntile(4) over (order by c.weighted_avg_charge)
-                                                 as charge_quartile,
+                                                      as charge_quartile,
 
         c.release_year
 
@@ -108,6 +142,7 @@ final as (
     left join readmission r on c.provider_ccn = r.provider_ccn
     left join mortality m on c.provider_ccn = m.provider_ccn
     left join spending s on c.provider_ccn = s.provider_ccn
+    left join patient_experience pe on c.provider_ccn = pe.provider_ccn
 
 )
 
