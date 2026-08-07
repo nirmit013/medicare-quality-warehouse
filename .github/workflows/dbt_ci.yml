@@ -29,6 +29,24 @@ jobs:
           python-version: '3.11'
 
       - name: Install dbt
+	- name: Write profiles.yml
+        working-directory: ./medicare_quality
+        run: |
+          cat > profiles.yml << 'EOF'
+          medicare_quality:
+            target: ci
+            outputs:
+              ci:
+                type: snowflake
+                account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+                user: "{{ env_var('SNOWFLAKE_USER') }}"
+                password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+                role: "{{ env_var('SNOWFLAKE_ROLE') }}"
+                warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE') }}"
+                database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+                schema: CI
+                threads: 4
+          EOF
         run: |
           pip install --upgrade pip
           pip install "dbt-core<2.0" "dbt-snowflake<2.0"
