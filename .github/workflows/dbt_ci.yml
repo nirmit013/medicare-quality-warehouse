@@ -29,7 +29,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install dbt
-	- name: Write profiles.yml
+        run: |
+          pip install --upgrade pip
+          pip install "dbt-core<2.0" "dbt-snowflake<2.0"
+
+      - name: Write profiles.yml
         working-directory: ./medicare_quality
         run: |
           cat > profiles.yml << 'EOF'
@@ -47,9 +51,6 @@ jobs:
                 schema: CI
                 threads: 4
           EOF
-        run: |
-          pip install --upgrade pip
-          pip install "dbt-core<2.0" "dbt-snowflake<2.0"
 
       - name: Install dbt packages
         working-directory: ./medicare_quality
